@@ -1,0 +1,137 @@
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script>
+        const address = '0x4c885030cD19452f3737252bd53947D3b7D3748d'
+        const web3 = new Web3(Web3.givenProvider);
+
+        window.addEventListener('load', async () => {
+            if (typeof (web3) === 'undefined') {
+                //return console.log("Metamask is not installed");
+                alert("Metamask is not installed, you cannot use this app")
+            }
+            else {
+                window.ethereum.enable();
+            }
+
+        });
+        const abi = [
+            { inputs: [], stateMutability: "nonpayable", type: "constructor" },
+            {
+                inputs: [],
+                name: "enter",
+                outputs: [],
+                stateMutability: "payable",
+                type: "function",
+            },
+            {
+                inputs: [],
+                name: "getPlayers",
+                outputs: [{ internalType: "address[]", name: "", type: "address[]" }],
+                stateMutability: "view",
+                type: "function",
+            },
+            {
+                inputs: [],
+                name: "manager",
+                outputs: [{ internalType: "address", name: "", type: "address" }],
+                stateMutability: "view",
+                type: "function",
+            },
+            {
+                inputs: [],
+                name: "pickWinner",
+                outputs: [],
+                stateMutability: "nonpayable",
+                type: "function",
+            },
+            {
+                inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+                name: "players",
+                outputs: [{ internalType: "address", name: "", type: "address" }],
+                stateMutability: "view",
+                type: "function",
+            },
+            {
+                inputs: [],
+                name: "winner",
+                outputs: [
+                    { internalType: "address payable", name: "", type: "address" },
+                ],
+                stateMutability: "view",
+                type: "function",
+            },
+        ];
+
+        const lotteryContract = new web3.eth.Contract(abi, address);
+        var manager;
+
+        getManagerAddress = async () => {
+            manager = await lotteryContract.methods.manager().call();
+            document.getElementById("manager").innerHTML =
+                "Manager is: " + manager;
+        };
+        getPlayerCount = async () => {
+            player = await lotteryContract.methods.getPlayers().call();
+            document.getElementById("count").innerHTML = 
+                "There is " + player.length + " people entering the system";
+        };
+        getBalance = async () => {
+            balance = await web3.eth.getBalance(address);
+            ether = web3.utils.fromWei(balance, "ether");
+            document.getElementById("balance").innerHTML = 
+                "The winner will get " + ether + " ether";
+        };
+        enter = async () => {
+            amount = document.getElementById("amount").value;
+            const accounts = await web3.eth.getAccounts();
+            document.getElementById("message").innerHTML =
+                "Please wait for processing your request ...";
+            await lotteryContract.methods.enter().send({
+                from: accounts[0],
+                value: web3.utils.toWei(amount, "ether"),
+                gas: 400000
+            });
+            document.getElementById("message").innerHTML =
+                "Transaction finished !";
+        };
+        pickWinner = async () => {
+            document.getElementById("message").innerHTML =
+                "Please wait for picking winner ...";
+            await lotteryContract.methods.pickWinner().send({
+                from: manager
+            });
+            winner = await lotteryContract.methods.winner().call();
+            document.getElementById("message").innerHTML =
+                "Winner is " + winner;
+        };
+    </script>
+</head>
+
+<body>
+    <h2>Lottery Contract</h2>
+    <script>
+        getManagerAddress();
+        getPlayerCount();
+        getBalance();
+    </script>
+    <div id="manager"></div>
+    <br />
+    <div id="count"></div>
+    <br />
+    <div id="balance"></div>
+    <br />
+    <hr>
+    <h3>Wanna play?</h3>
+    <label>How much ether do you need to enter? (>=0.01 ether) </label>
+    <input type="text" id="amount" />
+    <button type='button' onclick='enter()'> Enter </button>
+    <hr>
+    <h3>Ready to pick a winner?</h3>
+    <button type='button' onclick='pickWinner()'> Pick a winner! </button>
+    <hr>
+    <h3 id="message">...</h3>
+</body>
+
+</html>
